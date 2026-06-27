@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>OcuRead — Eye-Tracking per lo stress cognitivo in lettura</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Spectral:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+
+<section id="screen-intro" class="screen active">
+  <div class="topbar">
+    <div class="logo"><span class="dot"></span>OcuRead <small>oculometric reading lab</small></div>
+    <div class="spacer"></div>
+    <div class="stepdots"><b>01</b> Intro · 02 Setup · 03 Calibrazione · 04 Test · 05 Risultati</div>
+  </div>
+  <div class="wrap">
+    <div class="grid2">
+      <div>
+        <p class="eyebrow">Webcam eye-tracking · stress cognitivo</p>
+        <h1>Misura lo stress<br>in lettura <span class="thin">dallo sguardo.</span></h1>
+        <p class="lede">Una piattaforma di eye-tracking <em>non invasiva</em> basata su browser. Carica un testo, imposta un timer, calibra lo sguardo e raccogli metriche oculomotorie — fissazioni, saccadi, blink — per stimare il carico cognitivo durante la lettura.</p>
+        <ul class="feature-list">
+          <li><span class="ix">468</span><div><b>MediaPipe Face Landmarker</b> con iris tracking: rilevamento dello sguardo robusto, lo stesso modello della pipeline desktop.</div></li>
+          <li><span class="ix">45</span><div><b>Calibrazione densa multi-click</b> (9 punti × 5 click) con regressione e compensazione del movimento della testa.</div></li>
+          <li><span class="ix">4</span><div><b>Composite Stress Index</b> a quattro pilastri: blink rate, dispersione, velocità di scansione, sguardo verso il basso.</div></li>
+        </ul>
+        <div class="btn-row" style="margin-top:26px">
+          <button class="btn primary" id="btn-run">Avvia una sessione →</button>
+          <button class="btn ghost" id="btn-manage">Gestione testi</button>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="panel">
+          <p class="hint" style="margin:0 0 12px;color:var(--teal)">PRIMA DI INIZIARE</p>
+          <ul class="hint" style="margin:0;padding-left:18px;line-height:1.9">
+            <li>Usa <b style="color:var(--ink)">Google Chrome</b> ed acconsenti all'accesso alla webcam.</li>
+            <li>Siediti a ~60&nbsp;cm dallo schermo, in una stanza ben illuminata, con la luce di fronte (non dietro).</li>
+            <li>Mantieni la testa relativamente ferma durante calibrazione e test.</li>
+            <li>Niente occhiali riflettenti o luci alle spalle.</li>
+          </ul>
+        </div>
+        <div class="note warn">
+          <b>Onestà metodologica.</b> Una webcam di consumo non eguaglia un eye-tracker a infrarossi da laboratorio: la precisione spaziale assoluta (parola-per-parola) resta limitata. Le metriche di stress, basate su gaze relativo e blink, sono invece affidabili.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="screen-library" class="screen">
+  <div class="topbar">
+    <div class="logo"><span class="dot"></span>OcuRead <small>gestione testi</small></div>
+    <div class="spacer"></div>
+    <button class="btn ghost" id="lib-home" style="padding:9px 16px">← Home</button>
+    <button class="btn primary" id="lib-to-run" style="padding:9px 16px">Avvia sessione →</button>
+  </div>
+  <div class="wrap">
+    <p class="eyebrow">Libreria · area ricercatore</p>
+    <h1 style="font-size:34px;margin-bottom:8px">I tuoi testi di lettura</h1>
+    <p class="lede" style="font-size:16px;margin-bottom:24px">Crea e salva qui i testi da somministrare. Restano memorizzati su questo computer e li potrai selezionare al momento del test.</p>
+    <div class="grid2">
+      <div class="panel" style="order:2">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <p class="eyebrow" style="margin:0">Testi salvati</p>
+          <button class="btn ghost" id="lib-new" style="padding:8px 14px">＋ Nuovo</button>
+        </div>
+        <div id="lib-list"></div>
+      </div>
+      <div class="panel" style="order:1">
+        <p class="eyebrow" id="lib-editor-title" style="margin-bottom:16px">Nuovo testo</p>
+        <label class="field">
+          <span class="lab">Nome del testo</span>
+          <input type="text" id="lib-name" placeholder="es. Brano A · narrativa">
+        </label>
+        <span class="lab" style="display:block;font-size:12px;font-family:var(--mono);letter-spacing:.04em;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Sorgente</span>
+        <div class="toggle-src" id="lib-toggle">
+          <div class="seg on" data-src="write">Scrivi / incolla</div>
+          <div class="seg" data-src="pdf">Carica PDF</div>
+        </div>
+        <div class="src-pane on" id="lib-pane-write">
+          <textarea id="lib-text" placeholder="Incolla o scrivi qui il testo…"></textarea>
+        </div>
+        <div class="src-pane" id="lib-pane-pdf">
+          <div class="drop" id="lib-pdf-drop">
+            <div style="font-size:15px;margin-bottom:6px"><b>Trascina un PDF</b> o clicca per selezionarlo</div>
+            <div class="hint">Estrazione testo locale. Nessun file lascia il computer.</div>
+          </div>
+          <input type="file" id="lib-pdf-file" accept="application/pdf" class="hidden">
+          <div class="hint" id="lib-pdf-status" style="margin-top:12px"></div>
+        </div>
+
+        <div class="row" style="margin:18px 0 4px">
+          <div class="switch on" id="lib-timer-switch">
+            <span class="track"><span class="knob"></span></span>
+            <span style="font-size:14px;font-weight:500">Test a tempo</span>
+          </div>
+        </div>
+        <div class="row" id="lib-timer-fields">
+          <label class="field" style="margin-bottom:0"><span class="lab">Durata</span>
+            <input type="number" id="lib-min" min="0" value="2" style="width:84px"></label>
+          <span style="font-family:var(--mono);font-size:13px;color:var(--muted);padding-bottom:13px">min</span>
+          <label class="field" style="margin-bottom:0"><span class="lab">&nbsp;</span>
+            <input type="number" id="lib-sec" min="0" max="59" value="0" style="width:84px"></label>
+          <span style="font-family:var(--mono);font-size:13px;color:var(--muted);padding-bottom:13px">sec</span>
+          <label class="field" style="margin-bottom:0;flex:1;min-width:130px"><span class="lab">Dimensione testo</span>
+            <select id="lib-fontsize">
+              <option value="18">18px</option><option value="21" selected>21px</option>
+              <option value="24">24px</option><option value="28">28px</option>
+            </select></label>
+        </div>
+
+        <div class="btn-row" style="margin-top:18px">
+          <button class="btn primary" id="lib-save">Salva testo</button>
+          <button class="btn danger hidden" id="lib-delete">Elimina</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="screen-run" class="screen">
+  <div class="topbar">
+    <div class="logo"><span class="dot"></span>OcuRead <small>avvio sessione</small></div>
+    <div class="spacer"></div>
+    <button class="btn ghost" id="run-home" style="padding:9px 16px">← Home</button>
+    <button class="btn ghost" id="run-lib" style="padding:9px 16px">Gestione testi</button>
+  </div>
+  <div class="wrap" style="max-width:640px">
+    <p class="eyebrow">Esecuzione del test</p>
+    <h1 style="font-size:34px;margin-bottom:8px">Avvia una sessione</h1>
+    <p class="lede" style="font-size:16px;margin-bottom:24px">Inserisci i dati del partecipante e scegli il testo da somministrare. Poi si passa alla calibrazione.</p>
+    <div class="panel">
+      <label class="field">
+        <span class="lab">Nome / ID sessione</span>
+        <input type="text" id="run-session" placeholder="es. Partecipante 01 · condizione A">
+      </label>
+      <div class="row">
+        <label class="field" style="flex:0 0 140px">
+          <span class="lab">Età</span>
+          <input type="number" id="run-age" min="1" max="120" placeholder="anni">
+        </label>
+        <label class="field" style="flex:1;min-width:200px">
+          <span class="lab">Testo da somministrare</span>
+          <select id="run-test"></select>
+        </label>
+      </div>
+      <div id="run-empty" class="note warn hidden">Nessun testo salvato. Vai in <b>Gestione testi</b> per crearne almeno uno.</div>
+    </div>
+    <div class="note" style="margin-top:16px">Promemoria al partecipante: ~60&nbsp;cm dallo schermo, stanza ben illuminata con luce di fronte, testa ferma durante calibrazione e lettura.</div>
+    <div class="btn-row" style="margin-top:20px">
+      <button class="btn primary" id="run-start">Inizia calibrazione →</button>
+    </div>
+  </div>
+</section>
+
+<section id="screen-calib" class="screen">
+  <div class="calib-stage" id="calib-stage"></div>
+  <div class="calib-hud">
+    <span>CALIBRAZIONE MULTI-CLICK · <span id="calib-phase">guarda e clicca ogni punto 5 volte</span></span>
+    <span class="prog" id="calib-prog">0 / 45 campioni</span>
+  </div>
+  <div class="calib-center" id="calib-center">
+    <div class="big" id="calib-center-msg">Clicca i punti uno ad uno, fissandoli mentre clicchi</div>
+  </div>
+  <div class="calib-mini">
+    <div class="lbl">tracking · <span id="calib-track">—</span></div>
+    <video id="calib-video" muted playsinline></video>
+  </div>
+  <div class="gaze-cursor hidden" id="calib-gaze"></div>
+</section>
+
+<section id="screen-test" class="screen">
+  <div class="read-shell">
+    <div class="read-bar">
+      <div class="read-bar-in">
+        <span class="ttl" id="read-title">Lettura</span>
+        <span class="timer" id="read-timer"><span class="pulse"></span><span id="timer-val">00:00</span></span>
+        <button class="read-end" id="btn-end">Termina test ▸</button>
+      </div>
+    </div>
+    <div class="reading" id="read-content"></div>
+  </div>
+  <video id="test-video" muted playsinline style="position:fixed;left:0;bottom:0;width:2px;height:2px;opacity:0.01;pointer-events:none;z-index:-1"></video>
+</section>
+
+<section id="screen-results" class="screen">
+  <div class="topbar">
+    <div class="logo"><span class="dot"></span>OcuRead <small>referto di sessione</small></div>
+    <div class="spacer"></div>
+    <div class="stepdots">01 · 02 · 03 · 04 · <b>05</b> Risultati</div>
+  </div>
+  <div class="wrap">
+    <p class="eyebrow" id="res-eyebrow">Composite Stress Index</p>
+    <h1 style="font-size:32px;margin-bottom:24px" id="res-title">Risultati</h1>
+
+    <div class="resgrid">
+      <div class="panel gauge-wrap" style="justify-content:center">
+        <svg id="gauge-svg" width="220" height="140" viewBox="0 0 220 140"></svg>
+        <div class="gauge-num" id="gauge-num">—</div>
+        <div class="gauge-lab">Composite Stress Index / 100</div>
+        <div class="hint" id="gauge-band" style="margin-top:6px"></div>
+      </div>
+      <div class="panel">
+        <div class="pillars" id="pillars"></div>
+      </div>
+    </div>
+
+    <div class="resgrid" style="margin-top:18px">
+      <div class="panel">
+        <p class="eyebrow" style="margin-bottom:14px">Metriche di sessione</p>
+        <table class="stat-table" id="stat-table"></table>
+      </div>
+      <div class="panel">
+        <div class="viz-tabs">
+          <div class="seg on" data-viz="heat">Heatmap</div>
+          <div class="seg" data-viz="scan">Scanpath</div>
+        </div>
+        <div class="viz-stage" id="viz-stage">
+          <div class="reading" id="viz-reading" style="font-size:13px;line-height:1.7;width:100%;padding:18px 18px 40px"></div>
+          <canvas id="viz-canvas"></canvas>
+        </div>
+        <p class="hint" style="margin-top:10px">Overlay ricostruito sulle coordinate gaze registrate. La precisione spaziale è quella della webcam: leggi i pattern, non i singoli pixel.</p>
+      </div>
+    </div>
+
+    <div class="btn-row" style="margin-top:22px">
+      <button class="btn primary" id="btn-export">↓ Esporta CSV (dati grezzi)</button>
+      <button class="btn ghost" id="btn-export-json">↓ Esporta riepilogo JSON</button>
+      <button class="btn ghost" id="btn-new">Nuova sessione</button>
+    </div>
+    <p class="note" style="margin-top:18px">Il Composite Stress Index è un indicatore <b>euristico</b> ispirato a standard di ricerca, non una diagnosi clinica. Usa il CSV grezzo per analisi statistiche post-hoc (R / Python) come previsto dal tuo protocollo.</p>
+  </div>
+</section>
+
+<div class="loader hidden" id="loader">
+  <div class="spin"></div>
+  <div class="msg" id="loader-msg">Inizializzazione del modello di visione…</div>
+</div>
+
+<script type="module" src="./js/main.js"></script>
+</body>
+</html>
