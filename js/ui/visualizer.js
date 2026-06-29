@@ -6,7 +6,7 @@ export class Visualizer {
     const svg=$('#gauge-svg'); const cx=110,cy=120,r=92;
     const pt=p=>{ const ang=Math.PI+p*Math.PI; return [cx+r*Math.cos(ang), cy+r*Math.sin(ang)]; };
     const arcPath=p=>{ const [sx,sy]=pt(0),[ex,ey]=pt(p);
-      return `M ${sx} ${sy} A ${r} ${r} 0 0 0 ${ex} ${ey}`; };
+  return `M ${sx} ${sy} A ${r} ${r} 0 0 1 ${ex} ${ey}`; }; 
     const p=Stats.clamp(val/100,0.003,1);
     svg.innerHTML =
       `<path d="${arcPath(1)}" fill="none" stroke="#1c2c36" stroke-width="10" stroke-linecap="round"/>`+
