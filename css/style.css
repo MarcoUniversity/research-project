@@ -391,6 +391,24 @@ select:focus {
   height: 100%;
   transform: scaleX(-1);
 }
+.field input[type="date"] {
+  background: transparent;
+  color: inherit;
+  border: 1px solid var(--line);
+  border-radius: 8px; 
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: inherit;
+  width: 100%;
+  box-sizing: border-box;
+  
+  color-scheme: dark; 
+}
+
+.field input[type="date"]:focus {
+  border-color: var(--teal);
+  outline: none;
+}
 .mon-readout {
   position: absolute;
   left: 10px;
