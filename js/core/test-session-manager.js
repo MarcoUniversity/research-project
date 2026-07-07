@@ -21,9 +21,9 @@ export class TestSessionManager {
   }
 
   async startTest() {
-    if (this.app.calibManager.calibLoop) { 
-      cancelAnimationFrame(this.app.calibManager.calibLoop); 
-      this.app.calibManager.calibLoop = null; 
+    if (this.app.calibManager.calibLoop) {
+      cancelAnimationFrame(this.app.calibManager.calibLoop);
+      this.app.calibManager.calibLoop = null;
     }
     $('#read-title').textContent = this.app.S.config.title;
     const rc = $('#read-content'); rc.style.fontSize = this.app.S.config.fontSize + 'px';
@@ -104,7 +104,12 @@ export class TestSessionManager {
     if (this.testLoop) { cancelAnimationFrame(this.testLoop); this.testLoop = null; }
     if (this.timerInt) { clearInterval(this.timerInt); this.timerInt = null; }
     $('#read-timer').classList.remove('warn');
-    this.computeAndShowResults();
+
+    if (this.app.S.config.questions && this.app.S.config.questions.length > 0) {
+      this.app.startQuiz();
+    } else {
+      this.computeAndShowResults();
+    }
   }
 
   computeAndShowResults() {
@@ -138,11 +143,15 @@ export class TestSessionManager {
         <div class="pu" style="text-align:right">indice ${p.s.toFixed(0)}/100</div></div>`;
     }).join('');
 
+    const qs = this.app.S.session.quizScore;
+    const quizResultStr = qs ? `${qs.correct} su ${qs.total} corrette` : 'Nessun quiz';
+
     const rows = [
       ['Sessione', this.app.S.run.sessionName || this.app.S.config.title],
       ['Età partecipante', (this.app.S.run.age || '—') + ' anni'],
-      ['Data sessione', this.app.S.run.date || '—'], 
+      ['Data sessione', this.app.S.run.date || '—'],
       ['Testo somministrato', this.app.S.run.testName || '—'],
+      ['Quiz comprensione', quizResultStr], // FIX — era dichiarata ma mai inserita nella tabella
       ['Durata sessione', m.durSec.toFixed(1) + ' s'],
       ['Campioni gaze validi', this.app.S.session.samples.length],
       ['Frequenza campionamento valida', m.sampleRate.toFixed(1) + ' Hz'],
@@ -168,9 +177,10 @@ export class TestSessionManager {
   async sendToCloud(metrics, stress) {
     const sessionData = {
       sessionName: this.app.S.run.sessionName || "Senza Nome",
-      date: this.app.S.run.date || null, 
+      date: this.app.S.run.date || null,
       testName: this.app.S.run.testName || "Lettura Libera",
       age: this.app.S.run.age || null,
+      quizScore: this.app.S.session.quizScore || null,
       durSec: metrics.durSec,
       stressComposite: stress.composite,
       metrics: {
@@ -182,7 +192,7 @@ export class TestSessionManager {
       },
       calibrationRMSE: this.app.S.calib.quality || null
     };
-    
+
     await CloudDB.saveSession(sessionData);
   }
 }
