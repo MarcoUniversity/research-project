@@ -11,8 +11,7 @@ export class Exporter {
     const sm=session.samples, m=metrics;
     let rows=[
       `# Sessione: ${run.sessionName||config.title}`,
-      `# Eta: ${run.age||''}  Testo: ${run.testName||''}  Esportato: ${new Date().toISOString()}`,
-      "Timestamp_ms,Elapsed_s,GazeX,GazeY,RawGazeX,RawGazeY,ContentX_norm,ContentY_norm,InReading,Blink,SaccadeAmplitude_px"];
+`# Eta: ${run.age||''}  Testo: ${run.testName||''}  Quiz Corrette: ${session.quizScore ? session.quizScore.correct + '/' + session.quizScore.total : 'N/A'}  Esportato: ${new Date().toISOString()}`,      "Timestamp_ms,Elapsed_s,GazeX,GazeY,RawGazeX,RawGazeY,ContentX_norm,ContentY_norm,InReading,Blink,SaccadeAmplitude_px"];
     for(let i=0;i<sm.length;i++){
       const t=(sm[i].t-session.startT);
       const blink=session.blinks.some(bt=>Math.abs(bt-sm[i].t)<=70)?1:0;
@@ -30,6 +29,7 @@ export class Exporter {
       session:run.sessionName||config.title,
       participantAge:run.age||null,
       text:run.testName||null,
+      quizScore: session.quizScore || null, 
       timestamp:new Date().toISOString(),
       config:{ timed:config.timed, durationSec:config.durationSec, words:config.text.split(/\s+/).length },
       calibrationErrorPx:calib.quality,

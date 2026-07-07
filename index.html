@@ -82,9 +82,10 @@
           <div class="seg on" data-src="write">Scrivi / incolla</div>
           <div class="seg" data-src="pdf">Carica PDF</div>
         </div>
-        <div class="src-pane on" id="lib-pane-write">
+       <div class="src-pane on" id="lib-pane-write">
           <textarea id="lib-text" placeholder="Incolla o scrivi qui il testo…"></textarea>
         </div>
+        
         <div class="src-pane" id="lib-pane-pdf">
           <div class="drop" id="lib-pdf-drop">
             <div style="font-size:15px;margin-bottom:6px"><b>Trascina un PDF</b> o clicca per selezionarlo</div>
@@ -92,6 +93,14 @@
           </div>
           <input type="file" id="lib-pdf-file" accept="application/pdf" class="hidden">
           <div class="hint" id="lib-pdf-status" style="margin-top:12px"></div>
+        </div>
+
+        <div class="panel" style="margin-top:18px; border-color:var(--line2); padding:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <p class="eyebrow" style="margin:0">Domande a risposta multipla (Opzionale)</p>
+            <button class="btn ghost" id="lib-add-question" style="padding:6px 12px; font-size:12px;">＋ Aggiungi</button>
+          </div>
+          <div id="lib-questions-list"></div>
         </div>
 
         <div class="row" style="margin:18px 0 4px">
@@ -191,7 +200,22 @@
   </div>
   <video id="test-video" muted playsinline style="position:fixed;left:0;bottom:0;width:2px;height:2px;opacity:0.01;pointer-events:none;z-index:-1"></video>
 </section>
-
+<section id="screen-quiz" class="screen">
+  <div class="topbar">
+    <div class="logo"><span class="dot"></span>OcuRead <small>comprensione</small></div>
+  </div>
+  <div class="wrap" style="max-width:680px">
+    <p class="eyebrow">Questionario finale</p>
+    <h1 style="font-size:34px;margin-bottom:8px">Domande di comprensione</h1>
+    <p class="lede" style="font-size:16px;margin-bottom:24px">Rispondi alle seguenti domande sul brano appena letto.</p>
+    
+    <div id="quiz-container" style="display:flex; flex-direction:column; gap:20px; margin-bottom: 24px;"></div>
+    
+    <div class="btn-row">
+      <button class="btn primary" id="btn-submit-quiz">Invia e vedi i risultati →</button>
+    </div>
+  </div>
+</section>
 <section id="screen-results" class="screen">
   <div class="topbar">
     <div class="logo"><span class="dot"></span>OcuRead <small>referto di sessione</small></div>
