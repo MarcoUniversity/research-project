@@ -20,10 +20,10 @@ export class CloudDB {
         ...sessionData,
         createdAt: serverTimestamp() 
       });
-      console.log("Dati salvati in Cloud con successo! ID Documento:", docRef.id);
+      console.log("Data successfully saved to cloud! Document ID:", docRef.id);
       return true;
     } catch (e) {
-      console.error("Errore durante il salvataggio in Firebase:", e);
+      console.error("Error while saving to Firebase:", e);
       return false;
     }
   }
@@ -33,7 +33,7 @@ export class CloudDB {
       const snap = await getDocs(collection(db, "texts"));
       return snap.docs.map(doc => doc.data());
     } catch (e) {
-      console.error("Errore caricamento testi da Firebase:", e);
+      console.error("Error loading texts from Firebase:", e);
       return [];
     }
   }
@@ -43,7 +43,7 @@ export class CloudDB {
       await setDoc(doc(db, "texts", item.id), item);
       return true;
     } catch (e) {
-      console.error("Errore salvataggio testo:", e);
+      console.error("Error saving text:", e);
       return false;
     }
   }
@@ -53,7 +53,7 @@ export class CloudDB {
       await deleteDoc(doc(db, "texts", id));
       return true;
     } catch (e) {
-      console.error("Errore eliminazione testo:", e);
+      console.error("Error deleting text:", e);
       return false;
     }
   }

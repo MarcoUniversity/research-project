@@ -11,11 +11,11 @@ export class Library {
     if (!this.items.length) {
       const seed = { 
         id: 'seed1', 
-        name: 'Brano di prova', 
+        name: 'Sample passage', 
         timed: true, 
         durationSec: 120, 
         fontSize: 21,
-        text: "La lettura è un processo cognitivo complesso che impegna simultaneamente l'attenzione, la memoria di lavoro e i sistemi oculomotori. Quando un lettore affronta un testo sotto pressione temporale, i suoi movimenti oculari cambiano in modo misurabile: le fissazioni si accorciano, le saccadi diventano più ampie e irregolari, e la frequenza dei battiti di ciglia si discosta dal proprio valore di riposo.\n\nQuesto testo di prova serve a verificare il funzionamento della piattaforma. Sostituiscilo con il materiale sperimentale che intendi somministrare ai tuoi partecipanti." 
+        text: "Reading is a complex cognitive process that simultaneously engages attention, working memory, and oculomotor systems. When a reader faces a text under time pressure, eye movements change in measurable ways: fixations become shorter, saccades become wider and more irregular, and blink frequency deviates from baseline rest values.\n\nThis sample text is meant to verify that the platform works correctly. Replace it with the experimental material you intend to administer to your participants." 
       };
       this.items = [seed];
       await CloudDB.saveText(seed);

@@ -12,7 +12,7 @@ export class Visualizer {
       `<path d="${arcPath(1)}" fill="none" stroke="#1c2c36" stroke-width="10" stroke-linecap="round"/>`+
       `<path d="${arcPath(p)}" fill="none" stroke="${col}" stroke-width="10" stroke-linecap="round"/>`;
   }
-  static heatColor(t){ // blue->cyan->yellow->red
+  static heatColor(t){ 
     const stops=[[20,40,120],[31,182,166],[232,177,91],[232,116,91]];
     const seg=t*(stops.length-1); const i=Math.floor(seg); const f=seg-i;
     const a=stops[Math.min(i,stops.length-1)], b=stops[Math.min(i+1,stops.length-1)];

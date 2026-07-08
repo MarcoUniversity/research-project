@@ -8,7 +8,7 @@ export class FaceTracker {
   }
   async ensureModel(){
     if(this.faceLandmarker) return;
-    this.loader(true,"Scaricamento del modello di visione (prima volta)…");
+    this.loader(true,"Downloading vision model (first run)...");
     const resolver = await FilesetResolver.forVisionTasks(
       "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.12/wasm");
     this.faceLandmarker = await FaceLandmarker.createFromOptions(resolver,{
@@ -28,7 +28,7 @@ export class FaceTracker {
   }
   async ensureCamera(){
     if(this.stream) return this.stream;
-    this.loader(true,"Richiesta accesso alla webcam…");
+    this.loader(true,"Requesting webcam access...");
     try{
       this.stream = await navigator.mediaDevices.getUserMedia({
         video:{ width:{ideal:1280}, height:{ideal:720}, frameRate:{ideal:60}, facingMode:"user" },
@@ -36,7 +36,7 @@ export class FaceTracker {
       });
     }catch(e){
       this.loader(false);
-      alert("Impossibile accedere alla webcam.\nVerifica i permessi del browser e che nessun'altra app stia usando la camera.\n\nDettaglio: "+e.message);
+      alert("Unable to access the webcam.\nCheck browser permissions and make sure no other app is using the camera.\n\nDetails: "+e.message);
       throw e;
     }
     this.loader(false);
