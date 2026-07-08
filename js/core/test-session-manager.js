@@ -118,21 +118,21 @@ export class TestSessionManager {
     this.app.S.lastMetrics = { m, st };
 
     $('#res-title').textContent = this.app.S.config.title;
-    $('#res-eyebrow').textContent = (this.app.S.run.testName ? `${this.app.S.run.testName} · ` : '') + (this.app.S.run.age ? `${this.app.S.run.age} anni · ` : '') + 'Composite Stress Index';
+    $('#res-eyebrow').textContent = (this.app.S.run.testName ? `${this.app.S.run.testName} · ` : '') + (this.app.S.run.age ? `${this.app.S.run.age} years · ` : '') + 'Composite Stress Index';
     const c = Math.round(st.composite);
     $('#gauge-num').textContent = m.reliable ? c : '—';
     const col = !m.reliable ? 'var(--amber)' : c < 33 ? 'var(--green)' : c < 66 ? 'var(--amber)' : 'var(--coral)';
     $('#gauge-num').style.color = col;
     Visualizer.drawGauge(m.reliable ? st.composite : 0, col);
-    const band = !m.reliable ? 'Dati insufficienti per un indice affidabile' :
-      c < 33 ? 'Stress basso · stato rilassato' : c < 66 ? 'Stress moderato · carico presente' : 'Stress elevato · forte carico';
+    const band = !m.reliable ? 'Insufficient data for a reliable index' :
+      c < 33 ? 'Low stress · relaxed state' : c < 66 ? 'Moderate stress · noticeable load' : 'High stress · heavy load';
     $('#gauge-band').textContent = band; $('#gauge-band').style.color = col;
 
     const P = [
-      { n: 'Blink rate (U-curve)', v: m.blinkRate.toFixed(1), u: 'battiti/min', s: st.pBlink },
-      { n: 'Gaze variability', v: m.sd.toFixed(0), u: 'px (dispersione)', s: st.pDisp },
+      { n: 'Blink rate (U-curve)', v: m.blinkRate.toFixed(1), u: 'blinks/min', s: st.pBlink },
+      { n: 'Gaze variability', v: m.sd.toFixed(0), u: 'px (dispersion)', s: st.pDisp },
       { n: 'Scan velocity', v: m.meanSacc.toFixed(0), u: 'px (saccade media)', s: st.pScan },
-      { n: 'Downward gaze', v: (m.downFrac * 100).toFixed(0) + '%', u: 'tempo in basso', s: st.pDown },
+      { n: 'Downward gaze', v: (m.downFrac * 100).toFixed(0) + '%', u: 'time looking down', s: st.pDown },
     ];
     $('#pillars').innerHTML = P.map(p => {
       const col = p.s < 33 ? 'var(--green)' : p.s < 66 ? 'var(--amber)' : 'var(--coral)';
@@ -140,30 +140,30 @@ export class TestSessionManager {
         <div class="pv" style="color:${col}">${p.v}</div>
         <div class="pu">${p.u}</div>
         <div class="bar"><i style="width:${p.s.toFixed(0)}%;background:${col}"></i></div>
-        <div class="pu" style="text-align:right">indice ${p.s.toFixed(0)}/100</div></div>`;
+        <div class="pu" style="text-align:right">index ${p.s.toFixed(0)}/100</div></div>`;
     }).join('');
 
     const qs = this.app.S.session.quizScore;
-    const quizResultStr = qs ? `${qs.correct} su ${qs.total} corrette` : 'Nessun quiz';
+    const quizResultStr = qs ? `${qs.correct} out of ${qs.total} correct` : 'No quiz';
 
     const rows = [
-      ['Sessione', this.app.S.run.sessionName || this.app.S.config.title],
-      ['Età partecipante', (this.app.S.run.age || '—') + ' anni'],
-      ['Data sessione', this.app.S.run.date || '—'],
-      ['Testo somministrato', this.app.S.run.testName || '—'],
-      ['Quiz comprensione', quizResultStr], // FIX — era dichiarata ma mai inserita nella tabella
-      ['Durata sessione', m.durSec.toFixed(1) + ' s'],
-      ['Campioni gaze validi', this.app.S.session.samples.length],
-      ['Frequenza campionamento valida', m.sampleRate.toFixed(1) + ' Hz'],
-      ['Copertura tracking valida', (m.validFrac * 100).toFixed(0) + '%'],
-      ['Viso rilevato', (m.faceFrac * 100).toFixed(0) + '%'],
-      ['Affidabilità analisi', (m.reliability * 100).toFixed(0) + '%'],
-      ['Fissazioni rilevate', m.fixations.length],
-      ['Saccadi rilevate', m.saccades.length],
-      ['Blink totali', this.app.S.session.blinks.length],
-      ['Frequenza blink', m.blinkRate.toFixed(1) + ' /min'],
-      ['Durata fissazione media', (m.fixations.length ? Stats.mean(m.fixations.map(f => f.dur)) : 0).toFixed(0) + ' ms'],
-      ['Qualità calibrazione', (this.app.S.calib.quality || 0).toFixed(0) + ' px RMSE · P90 ' + (this.app.S.calib.qualityP90 || 0).toFixed(0) + ' px'],
+      ['Session', this.app.S.run.sessionName || this.app.S.config.title],
+      ['Participant age', (this.app.S.run.age || '—') + ' years'],
+      ['Session date', this.app.S.run.date || '—'],
+      ['Administered text', this.app.S.run.testName || '—'],
+      ['Comprehension quiz', quizResultStr], 
+      ['Session duration', m.durSec.toFixed(1) + ' s'],
+      ['Valid gaze samples', this.app.S.session.samples.length],
+      ['Valid sampling frequency', m.sampleRate.toFixed(1) + ' Hz'],
+      ['Valid tracking coverage', (m.validFrac * 100).toFixed(0) + '%'],
+      ['Face detected', (m.faceFrac * 100).toFixed(0) + '%'],
+      ['Analysis reliability', (m.reliability * 100).toFixed(0) + '%'],
+      ['Detected fixations', m.fixations.length],
+      ['Detected saccades', m.saccades.length],
+      ['Total blinks', this.app.S.session.blinks.length],
+      ['Blink rate', m.blinkRate.toFixed(1) + ' /min'],
+      ['Mean fixation duration', (m.fixations.length ? Stats.mean(m.fixations.map(f => f.dur)) : 0).toFixed(0) + ' ms'],
+      ['Calibration quality', (this.app.S.calib.quality || 0).toFixed(0) + ' px RMSE · P90 ' + (this.app.S.calib.qualityP90 || 0).toFixed(0) + ' px'],
     ];
     $('#stat-table').innerHTML = rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('');
 
@@ -176,9 +176,9 @@ export class TestSessionManager {
 
   async sendToCloud(metrics, stress) {
     const sessionData = {
-      sessionName: this.app.S.run.sessionName || "Senza Nome",
+      sessionName: this.app.S.run.sessionName || "Unnamed",
       date: this.app.S.run.date || null,
-      testName: this.app.S.run.testName || "Lettura Libera",
+      testName: this.app.S.run.testName || "Free Reading",
       age: this.app.S.run.age || null,
       quizScore: this.app.S.session.quizScore || null,
       durSec: metrics.durSec,

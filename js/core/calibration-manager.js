@@ -27,7 +27,7 @@ export class CalibrationManager {
     this.app.S._calibHistory = []; this.app.S._calibLastCapture = 0;
     this.buildCalibDots();
     $('#calib-center').style.display = 'flex';
-    $('#calib-center-msg').textContent = 'Clicca i punti uno ad uno, fissandoli mentre clicchi';
+    $('#calib-center-msg').textContent = 'Click points one by one while fixating on them';
     $('#calib-gaze').classList.add('hidden');
     
     let latestFeat = null, latestOK = false;
@@ -47,14 +47,14 @@ export class CalibrationManager {
           if (latestOK) {
             this.app.S._calibHistory.push({ t: now, feat });
             this.app.S._calibHistory = this.app.S._calibHistory.filter(x => now - x.t <= 350);
-            $('#calib-track').textContent = 'sguardo stabile';
+            $('#calib-track').textContent = 'stable gaze';
             $('#calib-track').style.color = 'var(--green)';
           } else {
-            $('#calib-track').textContent = 'occhi non validi';
+            $('#calib-track').textContent = 'invalid eyes';
             $('#calib-track').style.color = 'var(--amber)';
           }
         } else {
-          latestOK = false; $('#calib-track').textContent = 'viso NON rilevato';
+          latestOK = false; $('#calib-track').textContent = 'face NOT detected';
           $('#calib-track').style.color = 'var(--coral)';
         }
       }
@@ -118,7 +118,7 @@ export class CalibrationManager {
   }
 
   flash(el) { el.animate([{ opacity: 1 }, { opacity: .2 }, { opacity: 1 }], { duration: 300 }); }
-  updateCalibProg() { $('#calib-prog').textContent = `${this.app.S.calib.samples.length} / ${this.app.S._calibTotal} campioni`; }
+  updateCalibProg() { $('#calib-prog').textContent = `${this.app.S.calib.samples.length} / ${this.app.S._calibTotal} samples`; }
   
   retrain() {
     const fit = GazeModel.fit(this.app.S.calib.samples);
@@ -156,19 +156,18 @@ export class CalibrationManager {
     this.app.S.calib.qualityP90 = p90;
     $('#calib-center').style.display = 'flex';
     const diag = Math.hypot(innerWidth, innerHeight);
-    let band = err < diag * 0.04 ? ['ECCELLENTE', 'var(--green)'] : err < diag * 0.07 ? ['BUONA', 'var(--teal)'] :
-               err < diag * 0.11 ? ['SUFFICIENTE', 'var(--amber)'] : ['SCARSA', 'var(--coral)'];
+    let band = err < diag * 0.04 ? ['EXCELLENT', 'var(--green)'] : err < diag * 0.07 ? ['GOOD', 'var(--teal)'] :
+           err < diag * 0.11 ? ['FAIR', 'var(--amber)'] : ['POOR', 'var(--coral)'];
     $('#calib-center-msg').innerHTML =
-      `<div style="font-size:22px;color:${band[1]};margin-bottom:8px">Calibrazione ${band[0]}</div>` +
-      `<div>errore validato ≈ ${err.toFixed(0)} px · P90 ${p90.toFixed(0)} px</div>` +
-      (err >= diag * 0.11 ? `<div style="color:var(--coral);margin-top:8px">Consigliato ricalibrare: migliora luce e tieni la testa più ferma.</div>` : ``) +
+      `<div style="font-size:22px;color:${band[1]};margin-bottom:8px">Calibration ${band[0]}</div>` +
+      `<div>validated error ≈ ${err.toFixed(0)} px · P90 ${p90.toFixed(0)} px</div>` +
+      (err >= diag * 0.11 ? `<div style="color:var(--coral);margin-top:8px">Recalibration recommended: improve lighting and keep your head steadier.</div>` : ``) +
       `<div style="margin-top:22px;pointer-events:auto;display:flex;gap:12px;justify-content:center">` +
-        `<button class="btn ghost" id="recalib">Ricalibra</button>` +
-        `<button class="btn primary" id="startTest">Inizia il test →</button>` +
+        `<button class="btn ghost" id="recalib">Recalibrate</button>` +
+        `<button class="btn primary" id="startTest">Start test →</button>` +
       `</div>`;
     $('#recalib').addEventListener('click', () => this.startCalibration());
     
-    // Delega al manager della sessione
     $('#startTest').addEventListener('click', () => this.app.testManager.startTest());
   }
 }

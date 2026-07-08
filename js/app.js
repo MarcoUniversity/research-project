@@ -18,7 +18,7 @@ export class OcuReadApp {
     this.lib = new Library(LS_KEY);
     this.currentQuestions = [];
     this.S = {
-      config: { title: "Sessione OcuRead", text: "", timed: true, durationSec: 120, fontSize: 21 },
+      config: { title: "OcuRead Session", text: "", timed: true, durationSec: 120, fontSize: 21 },
       calib: { samples: [], wX: null, wY: null, quality: null, qualityP90: null },
       session: { samples: [], blinks: [], faceTimes: [], startT: 0, endT: 0, tracking: null },
       run: {},
@@ -34,7 +34,7 @@ export class OcuReadApp {
     this.calibVideo = $('#calib-video');
     this.testVideo = $('#test-video');
     this.calibMini = document.querySelector('.calib-mini');
-    this.libTimer = $('#lib-timer-switch');
+    this.runTimer = $('#run-timer-switch');
 
     this.calibManager = new CalibrationManager(this);
     this.testManager = new TestSessionManager(this);
@@ -48,26 +48,41 @@ export class OcuReadApp {
     $('#lib-pane-write').classList.add('on'); $('#lib-pane-pdf').classList.remove('on');
   }
 
-  // FIX 1 — Legge i valori correnti dagli input DOM e li salva in currentQuestions.
-  // Va chiamata PRIMA di ogni operazione che re-renderizza o modifica l'array,
-  // altrimenti i testi già digitati vengono persi al prossimo render.
+  normalizeQuestion(q) {
+    if (!q || typeof q.text !== 'string') return null;
+
+    let correctTrue = false;
+    if (typeof q.correctTrue === 'boolean') {
+      correctTrue = q.correctTrue;
+    } else if (Array.isArray(q.options) && Number.isInteger(q.correctIndex)) {
+      const raw = String(q.options[q.correctIndex] || '').trim().toLowerCase();
+      correctTrue = raw === 'true' || raw === 'vero';
+    }
+
+    const text = q.text.trim();
+    if (!text) return null;
+    return { text, correctTrue };
+  }
+
+  normalizeQuestions(list) {
+    return (list || []).map(q => this.normalizeQuestion(q)).filter(Boolean);
+  }
+
   syncQuestionsFromDOM() {
     $$('.q-edit-box').forEach((node, i) => {
       if (!this.currentQuestions[i]) return;
       this.currentQuestions[i].text = node.querySelector('.q-text').value;
-      this.currentQuestions[i].options = Array.from(node.querySelectorAll('.q-opt')).map(inp => inp.value);
       const correctRadio = node.querySelector(`input[name="q_correct_${i}"]:checked`);
-      this.currentQuestions[i].correctIndex = correctRadio ? parseInt(correctRadio.value, 10) : 0;
+      this.currentQuestions[i].correctTrue = correctRadio ? correctRadio.value === 'true' : false;
     });
   }
 
   clearEditor() {
     this.editingId = null; this.libPdfText = '';
-    this.currentQuestions = []; // FIX 2 — azzera l'array, altrimenti le domande del testo precedente sopravvivono
-    $('#lib-editor-title').textContent = 'Nuovo testo';
+    this.currentQuestions = []; 
+    $('#lib-editor-title').textContent = 'New text';
     $('#lib-name').value = ''; $('#lib-text').value = ''; $('#lib-pdf-status').innerHTML = '';
-    $('#lib-min').value = 2; $('#lib-sec').value = 0; $('#lib-fontsize').value = '21';
-    if (!this.libTimer.classList.contains('on')) this.libTimer.click();
+    $('#lib-fontsize').value = '21';
     $('#lib-delete').classList.add('hidden');
     this.setSourceWrite();
     this.renderQuestionsEditor();
@@ -75,14 +90,10 @@ export class OcuReadApp {
 
   loadEditor(item) {
     this.editingId = item.id; this.libPdfText = '';
-    // FIX 3 — popola currentQuestions dall'item esistente prima di renderizzare;
-    // deep-copy per evitare mutazioni accidentali sull'oggetto in libreria
-    this.currentQuestions = item.questions ? JSON.parse(JSON.stringify(item.questions)) : [];
-    $('#lib-editor-title').textContent = 'Modifica testo';
+    this.currentQuestions = this.normalizeQuestions(item.questions);
+    $('#lib-editor-title').textContent = 'Edit text';
     $('#lib-name').value = item.name; $('#lib-text').value = item.text; $('#lib-pdf-status').innerHTML = '';
-    $('#lib-min').value = Math.floor(item.durationSec / 60); $('#lib-sec').value = item.durationSec % 60;
-    $('#lib-fontsize').value = String(item.fontSize);
-    if (item.timed !== this.libTimer.classList.contains('on')) this.libTimer.click();
+    $('#lib-fontsize').value = String(item.fontSize || 21);
     $('#lib-delete').classList.remove('hidden');
     this.setSourceWrite();
     this.renderQuestionsEditor();
@@ -90,14 +101,13 @@ export class OcuReadApp {
 
   renderLibList() {
     const el = $('#lib-list');
-    if (!this.lib.items.length) { el.innerHTML = '<p class="hint">Nessun testo. Creane uno con ＋ Nuovo.</p>'; return; }
+    if (!this.lib.items.length) { el.innerHTML = '<p class="hint">No text yet. Create one with + New.</p>'; return; }
     el.innerHTML = this.lib.items.map(it => {
       const words = it.text.trim().split(/\s+/).length;
-      const t = it.timed ? `${Math.floor(it.durationSec / 60)}:${String(it.durationSec % 60).padStart(2, '0')}` : 'libero';
       return `<div class="liblitem" data-id="${it.id}" style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer;background:var(--bg)">
         <div><div style="font-weight:600;font-size:14px">${TextUtil.escapeHtml(it.name)}</div>
-        <div class="hint">${words} parole · timer ${t} · ${it.fontSize}px</div></div>
-        <span class="hint" style="color:var(--teal)">modifica →</span></div>`;
+        <div class="hint">${words} words · ${it.fontSize || 21}px</div></div>
+        <span class="hint" style="color:var(--teal)">edit →</span></div>`;
     }).join('');
     $$('.liblitem').forEach(d => d.addEventListener('click', () => {
       const it = this.lib.find(d.dataset.id); if (it) this.loadEditor(it);
@@ -108,37 +118,31 @@ export class OcuReadApp {
     const src = $('#lib-toggle .seg.on').dataset.src;
     const text = src === 'pdf' ? (this.libPdfText || $('#lib-text').value) : $('#lib-text').value;
     const name = $('#lib-name').value.trim();
-    if (!name) { alert('Dai un nome al testo.'); return; }
-    if (!text || !text.trim()) { alert('Inserisci o carica un testo.'); return; }
-    const timed = this.libTimer.classList.contains('on');
-    const durationSec = (parseInt($('#lib-min').value || 0, 10)) * 60 + (parseInt($('#lib-sec').value || 0, 10));
-    if (timed && durationSec <= 0) { alert('Imposta una durata valida o disattiva il timer.'); return; }
+    if (!name) { alert('Give the text a name.'); return; }
+    if (!text || !text.trim()) { alert('Enter or upload a text.'); return; }
     const questions = [];
     $$('.q-edit-box').forEach((node, i) => {
       const qText = node.querySelector('.q-text').value.trim();
-      const opts = Array.from(node.querySelectorAll('.q-opt')).map(inp => inp.value.trim());
       const correctRadio = node.querySelector(`input[name="q_correct_${i}"]:checked`);
-      const correctIndex = correctRadio ? parseInt(correctRadio.value, 10) : 0;
-      if (qText && opts.some(o => o)) questions.push({ text: qText, options: opts, correctIndex });
+      const correctTrue = correctRadio ? correctRadio.value === 'true' : false;
+      if (qText) questions.push({ text: qText, correctTrue });
     });
     const item = {
       id: this.editingId || ('t' + Date.now()),
       name,
       text: text.trim(),
-      timed,
-      durationSec,
       fontSize: parseInt($('#lib-fontsize').value, 10),
-      questions // FIX 4 — mancava del tutto: l'array veniva costruito ma mai allegato all'item salvato
+      questions
     };
     this.lib.upsert(item); this.renderLibList();
-    this.editingId = item.id; $('#lib-editor-title').textContent = 'Modifica testo'; $('#lib-delete').classList.remove('hidden');
-    const b = $('#lib-save'); const t = b.textContent; b.textContent = '✓ Salvato'; b.style.background = 'var(--green)';
+    this.editingId = item.id; $('#lib-editor-title').textContent = 'Edit text'; $('#lib-delete').classList.remove('hidden');
+    const b = $('#lib-save'); const t = b.textContent; b.textContent = '✓ Saved'; b.style.background = 'var(--green)';
     setTimeout(() => { b.textContent = t; b.style.background = ''; }, 1100);
   }
 
   deleteCurrent() {
     if (!this.editingId) return;
-    if (!confirm('Eliminare questo testo?')) return;
+    if (!confirm('Delete this text?')) return;
     this.lib.remove(this.editingId); this.renderLibList(); this.clearEditor();
   }
 
@@ -146,7 +150,7 @@ export class OcuReadApp {
     const sel = $('#run-test'); sel.innerHTML = '';
     this.lib.items.forEach(it => {
       const o = document.createElement('option'); o.value = it.id;
-      o.textContent = it.name + (it.timed ? ` · ${Math.floor(it.durationSec / 60)}:${String(it.durationSec % 60).padStart(2, '0')}` : ' · libero');
+      o.textContent = it.name;
       sel.appendChild(o);
     });
     const empty = !this.lib.items.length;
@@ -160,16 +164,21 @@ export class OcuReadApp {
     const age = parseInt($('#run-age').value, 10);
     const date = $('#run-date').value;
     const item = this.lib.find($('#run-test').value);
+    const timed = this.runTimer.classList.contains('on');
+    const durationSec = (parseInt($('#run-min').value || 0, 10)) * 60 + (parseInt($('#run-sec').value || 0, 10));
 
-    if (!sessionName) { alert('Inserisci il nome / ID della sessione.'); return; }
-    if (!date) { alert('Inserisci la data della sessione.'); return; }
-    if (!age || age <= 0) { alert("Inserisci l'età del partecipante."); return; }
-    if (!item) { alert('Seleziona un testo.'); return; }
-    this.S.config.timed = item.timed; this.S.config.durationSec = item.durationSec; this.S.config.fontSize = item.fontSize;
-    this.S.config.questions = item.questions || [];
+    if (!sessionName) { alert('Enter session name / ID.'); return; }
+    if (!date) { alert('Enter session date.'); return; }
+    if (!age || age <= 0) { alert("Enter participant age."); return; }
+    if (!item) { alert('Select a text.'); return; }
+    if (timed && durationSec <= 0) { alert('Set a valid duration for timed mode.'); return; }
+
+    this.S.config.questions = this.normalizeQuestions(item.questions);
     this.S.run = { sessionName, age, date, testName: item.name };
     this.S.config.title = sessionName; this.S.config.text = item.text;
-    this.S.config.timed = item.timed; this.S.config.durationSec = item.durationSec; this.S.config.fontSize = item.fontSize;
+    this.S.config.timed = timed;
+    this.S.config.durationSec = durationSec;
+    this.S.config.fontSize = item.fontSize || 21;
     try { await this.tracker.ensureModel(); await this.tracker.ensureCamera(); } catch (e) { return; }
 
     this.calibManager.startCalibration();
@@ -181,19 +190,23 @@ export class OcuReadApp {
     const c = $('#lib-questions-list');
     c.innerHTML = this.currentQuestions.map((q, i) => `
       <div class="q-edit-box panel" style="padding:14px; margin-bottom:12px;">
-        <input type="text" placeholder="Scrivi qui la domanda..." value="${TextUtil.escapeHtml(q.text || '')}" class="q-text" style="margin-bottom:12px; font-weight:600;">
-        ${(q.options || ['', '', '', '']).map((opt, j) => `
-          <div style="display:flex; gap:10px; align-items:center; margin-bottom:8px;">
-            <input type="radio" name="q_correct_${i}" value="${j}" ${q.correctIndex === j ? 'checked' : ''} title="Segna come risposta corretta" style="cursor:pointer; width:16px; height:16px; accent-color:var(--teal);">
-            <input type="text" placeholder="Opzione ${j+1}" value="${TextUtil.escapeHtml(opt)}" class="q-opt" style="flex:1;">
-          </div>
-        `).join('')}
-        <button class="btn danger btn-del-q" data-i="${i}" style="margin-top:8px; padding:6px 12px; font-size:12px;">Elimina domanda</button>
+        <input type="text" placeholder="Write the question here..." value="${TextUtil.escapeHtml(q.text || '')}" class="q-text" style="margin-bottom:12px; font-weight:600;">
+        <div style="display:flex; gap:16px; align-items:center; margin-bottom:8px;">
+          <label style="display:flex; gap:8px; align-items:center; cursor:pointer;">
+            <input type="radio" name="q_correct_${i}" value="true" ${q.correctTrue ? 'checked' : ''} title="Correct answer is True" style="cursor:pointer; width:16px; height:16px; accent-color:var(--teal);">
+            <span>True</span>
+          </label>
+          <label style="display:flex; gap:8px; align-items:center; cursor:pointer;">
+            <input type="radio" name="q_correct_${i}" value="false" ${!q.correctTrue ? 'checked' : ''} title="Correct answer is False" style="cursor:pointer; width:16px; height:16px; accent-color:var(--teal);">
+            <span>False</span>
+          </label>
+        </div>
+        <button class="btn danger btn-del-q" data-i="${i}" style="margin-top:8px; padding:6px 12px; font-size:12px;">Delete question</button>
       </div>
     `).join('');
 
     $$('.btn-del-q').forEach(btn => btn.addEventListener('click', (e) => {
-      this.syncQuestionsFromDOM(); // FIX 1 — salva i valori digitati prima di rimuovere la riga
+      this.syncQuestionsFromDOM(); 
       this.currentQuestions.splice(parseInt(e.target.dataset.i, 10), 1);
       this.renderQuestionsEditor();
     }));
@@ -207,12 +220,14 @@ export class OcuReadApp {
       <div class="panel" data-i="${i}">
         <p style="font-weight:600; font-size:18px; margin:0 0 14px;">${i+1}. ${TextUtil.escapeHtml(q.text)}</p>
         <div style="display:flex; flex-direction:column; gap:10px;">
-          ${q.options.filter(o => o.trim() !== '').map((opt, j) => `
-            <label style="display:flex; gap:12px; align-items:center; cursor:pointer; background:var(--bg); padding:12px 14px; border:1px solid var(--line2); border-radius:8px;">
-              <input type="radio" name="quiz_q_${i}" value="${j}" style="accent-color:var(--teal); width:18px; height:18px;">
-              <span style="font-size:16px;">${TextUtil.escapeHtml(opt)}</span>
-            </label>
-          `).join('')}
+          <label style="display:flex; gap:12px; align-items:center; cursor:pointer; background:var(--bg); padding:12px 14px; border:1px solid var(--line2); border-radius:8px;">
+            <input type="radio" name="quiz_q_${i}" value="true" style="accent-color:var(--teal); width:18px; height:18px;">
+            <span style="font-size:16px;">True</span>
+          </label>
+          <label style="display:flex; gap:12px; align-items:center; cursor:pointer; background:var(--bg); padding:12px 14px; border:1px solid var(--line2); border-radius:8px;">
+            <input type="radio" name="quiz_q_${i}" value="false" style="accent-color:var(--teal); width:18px; height:18px;">
+            <span style="font-size:16px;">False</span>
+          </label>
         </div>
       </div>
     `).join('');
@@ -223,7 +238,7 @@ export class OcuReadApp {
     let correct = 0;
     qs.forEach((q, i) => {
       const sel = $(`input[name="quiz_q_${i}"]:checked`);
-      if (sel && parseInt(sel.value, 10) === q.correctIndex) correct++;
+      if (sel && (sel.value === 'true') === !!q.correctTrue) correct++;
     });
     this.S.session.quizScore = { correct, total: qs.length };
     this.testManager.computeAndShowResults();
@@ -231,8 +246,8 @@ export class OcuReadApp {
 
   wire() {
     $('#lib-add-question').addEventListener('click', () => {
-      this.syncQuestionsFromDOM(); // FIX 1 — salva i valori digitati prima di aggiungere la nuova riga
-      this.currentQuestions.push({ text: '', options: ['', '', '', ''], correctIndex: 0 });
+      this.syncQuestionsFromDOM(); 
+      this.currentQuestions.push({ text: '', correctTrue: true });
       this.renderQuestionsEditor();
     });
 
@@ -245,11 +260,12 @@ export class OcuReadApp {
       $('#lib-pane-write').classList.toggle('on', seg.dataset.src === 'write');
       $('#lib-pane-pdf').classList.toggle('on', seg.dataset.src === 'pdf');
     }));
-    this.libTimer.addEventListener('click', () => {
-      this.libTimer.classList.toggle('on');
-      const on = this.libTimer.classList.contains('on');
-      $('#lib-timer-fields').style.opacity = on ? '1' : '.45';
-      $('#lib-min').disabled = !on; $('#lib-sec').disabled = !on;
+    this.runTimer.addEventListener('click', () => {
+      this.runTimer.classList.toggle('on');
+      const on = this.runTimer.classList.contains('on');
+      $('#run-timer-fields').style.opacity = on ? '1' : '.45';
+      $('#run-min').disabled = !on;
+      $('#run-sec').disabled = !on;
     });
     $('#lib-pdf-drop').addEventListener('click', () => $('#lib-pdf-file').click());
     $('#lib-pdf-drop').addEventListener('dragover', e => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--teal)'; });
